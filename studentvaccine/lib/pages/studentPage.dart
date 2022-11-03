@@ -176,10 +176,13 @@ class _studentPageState extends State<studentPage> {
   }
 
   Future<void> saveStudent(String name, String gender, DateTime dob) async {
+    var tempSchool = ParseObject('tempSchool')..set('Name', 'WWD');
+    await tempSchool.save();
+
     final student = ParseObject('Student')
       ..set('Name', name)
       ..set('Gender', gender)
-      ..set('DoB', dob);
+      ..set('DoB', dob)..set('schoolName', ParseObject('tempSchool')..objectId = tempSchool.objectId);
     await student.save();
   }
 
