@@ -9,13 +9,19 @@ class studentPage extends StatefulWidget {
 }
 
 class _studentPageState extends State<studentPage> {
+  ParseUser? currentUser;
+
+  Future<ParseUser?> getUser() async {
+    currentUser = await ParseUser.currentUser() as ParseUser?;
+    return currentUser;
+  }
+
   TextEditingController _nameController = TextEditingController();
   String gender = "Male";
   DateTime dob = DateTime.now();
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     _nameController.dispose();
     gender = "";
@@ -31,6 +37,27 @@ class _studentPageState extends State<studentPage> {
       body: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Column(children: [
+          FutureBuilder<ParseUser?>(
+              future: getUser(),
+              builder: (context, snapshot) {
+                switch (snapshot.connectionState) {
+                  case ConnectionState.waiting :
+                  case ConnectionState.none :
+                    return Center(
+                      child: Container(
+                        width: 100,
+                        height: 100,
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  default :
+                    return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                      child: Center(child: Text('Hello, ${snapshot.data!.username}'),),
+                    );
+                }
+              }
+          ),
           TextFormField(
             controller: _nameController,
             decoration: InputDecoration(
@@ -178,11 +205,27 @@ class _studentPageState extends State<studentPage> {
   Future<void> saveStudent(String name, String gender, DateTime dob) async {
     var tempSchool = ParseObject('tempSchool')..set('Name', 'WWD');
     await tempSchool.save();
+    // get User Object 
+  final QueryBuilder<ParseObject> user  = QueryBuilder(ParseObject('User'));
+    print("User watch here");
+  print(currentUser?.username);
+    print(currentUser?.objectId);
+
+    String? username = '';
+  if(currentUser?.username == null){
+     username = 'sanket';
+  } else {
+     username = currentUser?.username;
+  }
+  user.whereContains('username', username!);
+    print("User watch till here");
+
+    final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('tempSchool'));
 
     final student = ParseObject('Student')
       ..set('Name', name)
       ..set('Gender', gender)
-      ..set('DoB', dob)..set('schoolName', ParseObject('tempSchool')..objectId = tempSchool.objectId);
+      ..set('DoB', dob)..set('schoolName', (ParseObject('tempSchool')..objectId = tempSchool.objectId).toPointer());
     await student.save();
   }
 
