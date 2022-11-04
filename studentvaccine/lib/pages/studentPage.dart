@@ -1,5 +1,9 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
 
 class studentPage extends StatefulWidget {
   const studentPage({Key? key}) : super(key: key);
@@ -137,6 +141,16 @@ class _studentPageState extends State<studentPage> {
                 ),
                 label: Text('Add')),
           ),
+          Container(
+            child: ElevatedButton.icon(
+                onPressed: pickFile,
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.red,
+                  size: 30.0,
+                ),
+                label: Text('Choose file')),
+          ),
           Expanded(
               child: Column(
                 children: <Widget>[
@@ -200,6 +214,43 @@ class _studentPageState extends State<studentPage> {
     setState(() {
       _nameController.clear();
     });
+  }
+
+  void pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result?.files.single != null) {
+      if (kIsWeb) {
+        var bytes = result?.files.single.bytes;
+        var decoder = SpreadsheetDecoder.decodeBytes(bytes!);
+        for (var table in decoder.tables.keys) {
+          print(table);
+          var maxcols = decoder.tables[table]!.maxCols;
+          if (maxcols > 3 ) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Please select correct file"),
+              duration: Duration(seconds: 2),
+            ));
+            return;
+          }
+          for (var row in decoder.tables[table]!.rows) {
+            //print('$row');
+            var name = row[0];
+            var gender = row[1];
+            var dob = row[2];
+            await saveStudent(name, gender, DateTime.parse(dob));
+          }
+        }
+      } else {
+        // nee to check and complete below code
+        String? path = result?.files.single.path;
+        print("Path is " + path!);
+        File? file;
+        file = File(path);
+        ParseFileBase parseFile;
+        parseFile = ParseFile(file);
+        print(parseFile.toString());
+      }
+    }
   }
 
   Future<void> saveStudent(String name, String gender, DateTime dob) async {
