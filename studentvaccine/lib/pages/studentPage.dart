@@ -1,3 +1,7 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:spreadsheet_decoder/spreadsheet_decoder.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 import 'package:flutter/material.dart';
 
@@ -132,15 +136,23 @@ class _studentPageState extends State<studentPage> {
                 onPressed: addStudent,
                 icon: Icon(
                   Icons.add,
-                  color: Colors.red,
+                  color: Colors.black,
                   size: 30.0,
                 ),
                 label: Text('Add')),
           ),
+          Container(
+            child: ElevatedButton.icon(
+                onPressed: pickFile,
+                icon: Icon(
+                  Icons.upload_file,
+                  color: Colors.black,
+                  size: 30.0,
+                ), label: Text('Choose file')),
+          ),
           Expanded(
               child: Column(
                 children: <Widget>[
-                  Text('Display students here'),
                   Expanded(
                       child: FutureBuilder<List<ParseObject>> (
                         future: getStudent(),
@@ -153,7 +165,7 @@ class _studentPageState extends State<studentPage> {
                               );
                             default:
                               if(snapshot.hasError){
-                                return Center(child: Text("Error...."),);
+                                return Center(child: Text("Error or continue to perform to get data..."),);
                               }
                               if(!snapshot.hasData) {
                                 return Center(child: Text("No Data... !!"),);
@@ -201,37 +213,85 @@ class _studentPageState extends State<studentPage> {
       _nameController.clear();
     });
   }
+  void pickFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+    if (result?.files.single != null) {
+      if (kIsWeb) {
+        var bytes = result?.files.single.bytes;
+        var decoder = SpreadsheetDecoder.decodeBytes(bytes!);
+        for (var table in decoder.tables.keys) {
+          print(table);
+          var maxcols = decoder.tables[table]!.maxCols;
+          if (maxcols > 3 ) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Please select correct file"),
+              duration: Duration(seconds: 2),
+            ));
+            return;
+          }
+          for (var row in decoder.tables[table]!.rows) {
+            //print('$row');
+            var name = row[0];
+            var gender = row[1];
+            var dob = row[2];
+            await saveStudent(name, gender, DateTime.parse(dob));
+          }
+        }
+      } else {
+        // nee to check and complete below code
+        String? path = result?.files.single.path;
+        print("Path is " + path!);
+        File? file = new File(path);
+        ParseFileBase parseFile =  ParseFile(file);
+        print(parseFile.toString());
+      }
+    }
+  }
 
   Future<void> saveStudent(String name, String gender, DateTime dob) async {
-    var tempSchool = ParseObject('tempSchool')..set('Name', 'WWD');
-    await tempSchool.save();
-    // get User Object 
-  final QueryBuilder<ParseObject> user  = QueryBuilder(ParseObject('User'));
-    print("User watch here");
-  print(currentUser?.username);
-    print(currentUser?.objectId);
-
-    String? username = '';
-  if(currentUser?.username == null){
-     username = 'sanket';
-  } else {
-     username = currentUser?.username;
-  }
-  user.whereContains('username', username!);
-    print("User watch till here");
-
     final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('tempSchool'));
-
-    final student = ParseObject('Student')
-      ..set('Name', name)
-      ..set('Gender', gender)
-      ..set('DoB', dob)..set('schoolName', (ParseObject('tempSchool')..objectId = tempSchool.objectId).toPointer());
-    await student.save();
+    school.whereContains('User', currentUser!.objectId!);
+    final ParseResponse apiResponse = await school.query();
+    String response = apiResponse.toString();
+    print("School watch starting here $response");
+    if (apiResponse.success && apiResponse.results != null && apiResponse.count ==1) {
+      print('School watch here , count is -->${apiResponse.count}');
+      for (var o in apiResponse.results!) {
+        // print("School watch inside for loop here");
+        // print('Name is --> ${(o as ParseObject).toString()}');
+        // print('Address is --> ${(o as ParseObject).get<String>('Address')}');
+        // print('Object ID is --> ${(o as ParseObject).get<String>('objectId')}');
+        final student = ParseObject('Student')
+          ..set('Name', name)
+          ..set('Gender', gender)
+          ..set('DoB', dob)..set('schoolName', (ParseObject('tempSchool')..objectId = (o as ParseObject).get<String>('objectId')).toPointer());
+        await student.save();
+      }
+      print("School watch inside if here");
+    }
+    print("School watch ending here");
   }
 
   Future<List<ParseObject>> getStudent() async {
-    QueryBuilder<ParseObject> queryTodo =
-    QueryBuilder<ParseObject>(ParseObject('Student'));
+    final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('tempSchool'));
+    school.whereContains('User', currentUser!.objectId!);
+    final ParseResponse schoolResponse = await school.query();
+    String response = schoolResponse.toString();
+    print("get student watch starting here $response");
+    String schoolId = '';
+    if (schoolResponse.success && schoolResponse.results != null && schoolResponse.count ==1) {
+      print('get student watch here , count is -->${schoolResponse.count}');
+      for (var o in schoolResponse.results!) {
+        schoolId = (o as ParseObject).get<String>('objectId').toString();
+        print('get student watch here , school ID is -->${schoolId}');
+      }
+    }
+    print('get student watch here outside if & for loop, school ID is -->${schoolId}');
+    QueryBuilder<ParseObject> queryTodo = QueryBuilder<ParseObject>(ParseObject('Student'));
+    if (schoolId == null || schoolId.isEmpty){
+      return [];
+    }
+    queryTodo.whereContains('schoolName', schoolId);
     final ParseResponse apiResponse = await queryTodo.query();
 
     if (apiResponse.success && apiResponse.results != null) {
