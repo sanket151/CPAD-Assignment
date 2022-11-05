@@ -253,9 +253,9 @@ class _studentPageState extends State<studentPage> {
     school.whereContains('User', currentUser!.objectId!);
     final ParseResponse apiResponse = await school.query();
     String response = apiResponse.toString();
-    print("School watch starting here $response");
+    // print("School watch starting here $response");
     if (apiResponse.success && apiResponse.results != null && apiResponse.count ==1) {
-      print('School watch here , count is -->${apiResponse.count}');
+      // print('School watch here , count is -->${apiResponse.count}');
       for (var o in apiResponse.results!) {
         // print("School watch inside for loop here");
         // print('Name is --> ${(o as ParseObject).toString()}');
@@ -267,9 +267,9 @@ class _studentPageState extends State<studentPage> {
           ..set('DoB', dob)..set('schoolName', (ParseObject('tempSchool')..objectId = (o as ParseObject).get<String>('objectId')).toPointer());
         await student.save();
       }
-      print("School watch inside if here");
+      // print("School watch inside if here");
     }
-    print("School watch ending here");
+    // print("School watch ending here");
   }
 
   Future<List<ParseObject>> getStudent() async {
