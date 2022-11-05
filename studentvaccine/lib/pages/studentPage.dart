@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 import 'package:flutter/material.dart';
+import 'package:studentvaccine/pages/updatestudent.dart';
 
 class studentPage extends StatefulWidget {
   const studentPage({Key? key}) : super(key: key);
@@ -173,11 +174,18 @@ class _studentPageState extends State<studentPage> {
                                 return ListView.builder( itemCount: snapshot.data!.length ,
                                     itemBuilder: (context,index){
                                       final varStudent = snapshot.data![index];
+                                      final studentObjectId = varStudent.get<String>('objectId')!;
                                       final varName = varStudent.get<String>('Name')!;
                                       final varGender = varStudent.get<String>('Gender')!;
                                       final varDoB = varStudent.get<DateTime>('DoB')!.toString();
                                       return ListTile(
                                         title: Text(varName),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (context) => updateStudent(studentId: studentObjectId)),
+                                          );
+                                        },
                                         subtitle: Row(
                                           children: <Widget>[
                                             Expanded(child: Text(varGender)),

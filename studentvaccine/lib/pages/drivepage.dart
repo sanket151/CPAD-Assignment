@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
 
+import '../main.dart';
+
 class drivePage extends StatefulWidget {
   const drivePage({Key? key}) : super(key: key);
 
@@ -105,7 +107,7 @@ class _drivePageState extends State<drivePage> {
                   color: Colors.red,
                   size: 30.0,
                 ),
-                label: Text('Add')),
+                label: Text(objectId.isEmpty ? 'Add' : 'Update')),
           ),
           Container(
             child: ElevatedButton.icon(
@@ -113,6 +115,7 @@ class _drivePageState extends State<drivePage> {
                   setState(() {
                     _driveController.clear();
                     dateOfDrive = DateTime.now();
+                    objectId = "";
                   });
                 },
                 icon: Icon(
@@ -199,6 +202,10 @@ class _drivePageState extends State<drivePage> {
         return;
       }
       await saveDrive(_driveController.text, dateOfDrive!);
+      Message.showSuccess(
+          context: context,
+          message: 'Drive is successfully added',
+      );
       setState(() {
         _driveController.clear();
         objectId = "";
@@ -218,6 +225,10 @@ class _drivePageState extends State<drivePage> {
         ..set('NumOfShots', _driveController.text)
         ..set('DoD', dateOfDrive);
       await drive.save();
+      Message.showSuccess(
+        context: context,
+        message: 'Drive is successfully updated',
+      );
       setState(() {
         _driveController.clear();
         objectId = "";
@@ -228,13 +239,15 @@ class _drivePageState extends State<drivePage> {
   Future<void> saveDrive(String numOfShots ,DateTime dod) async {
     final drive = ParseObject('Drive')
       ..set('NumOfShots', numOfShots)
-      ..set('DoD', dod);
+      ..set('DoD', dod)
+      ..set('User', (ParseObject('_User')..objectId = currentUser?.objectId).toPointer());
     await drive.save();
   }
 
   Future<List<ParseObject>> getDrive() async {
     QueryBuilder<ParseObject> queryTodo =
     QueryBuilder<ParseObject>(ParseObject('Drive'));
+    queryTodo.whereContains('User', currentUser!.objectId!);
     final ParseResponse apiResponse = await queryTodo.query();
 
     if (apiResponse.success && apiResponse.results != null) {
