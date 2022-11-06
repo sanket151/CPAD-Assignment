@@ -187,16 +187,13 @@ class _updateStudentState extends State<updateStudent> {
                                       color: Colors.deepPurpleAccent,
                                     ),
                                     onChanged: (String? value) {
-                                      print("Value is : " + value!);
                                       // This is called when the user selects an item.
                                       setState(() {
-                                        drivedate = value;
+                                        drivedate = value!;
                                       });
                                     },
                                     items: drives.map<DropdownMenuItem<String>>(
                                             (String value) {
-                                              print(drives.length);
-                                              print("Value inside is : " + value);
                                           return DropdownMenuItem<String>(
                                             value: value,
                                             child: Text(value),

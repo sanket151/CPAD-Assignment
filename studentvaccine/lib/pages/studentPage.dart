@@ -151,6 +151,9 @@ class _studentPageState extends State<studentPage> {
                   size: 30.0,
                 ), label: Text('Choose file')),
           ),
+          Container(
+            child: Text("Click the students below to update their vaccine status"),
+          ),
           Expanded(
               child: Column(
                 children: <Widget>[
@@ -195,7 +198,7 @@ class _studentPageState extends State<studentPage> {
                                       );
                                     });
                               }
-                          };
+                          }
                         }
                       )
                   ),
@@ -260,7 +263,6 @@ class _studentPageState extends State<studentPage> {
     final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('School'));
     school.whereContains('User', currentUser!.objectId!);
     final ParseResponse apiResponse = await school.query();
-    String response = apiResponse.toString();
     // print("School watch starting here $response");
     if (apiResponse.success && apiResponse.results != null && apiResponse.count ==1) {
       // print('School watch here , count is -->${apiResponse.count}');
