@@ -503,7 +503,7 @@ class _UserPageState extends State<UserPage> {
                           builder: (context, AsyncSnapshot<String> snapshot){
                             if(snapshot.hasData){
                               final driveCount = snapshot.data as String;
-                              return Text('Count of registered Students : $driveCount');
+                              return Text('Count of vaccinated Students : $driveCount');
                             }
                             return const CircularProgressIndicator();
                           },
