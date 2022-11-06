@@ -257,7 +257,7 @@ class _studentPageState extends State<studentPage> {
   }
 
   Future<void> saveStudent(String name, String gender, DateTime dob) async {
-    final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('tempSchool'));
+    final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('School'));
     school.whereContains('User', currentUser!.objectId!);
     final ParseResponse apiResponse = await school.query();
     String response = apiResponse.toString();
@@ -272,7 +272,7 @@ class _studentPageState extends State<studentPage> {
         final student = ParseObject('Student')
           ..set('Name', name)
           ..set('Gender', gender)
-          ..set('DoB', dob)..set('schoolName', (ParseObject('tempSchool')..objectId = (o as ParseObject).get<String>('objectId')).toPointer());
+          ..set('DoB', dob)..set('schoolName', (ParseObject('School')..objectId = (o as ParseObject).get<String>('objectId')).toPointer());
         await student.save();
       }
       // print("School watch inside if here");
@@ -281,7 +281,7 @@ class _studentPageState extends State<studentPage> {
   }
 
   Future<List<ParseObject>> getStudent() async {
-    final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('tempSchool'));
+    final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('School'));
     school.whereContains('User', currentUser!.objectId!);
     final ParseResponse schoolResponse = await school.query();
     String response = schoolResponse.toString();
@@ -295,12 +295,12 @@ class _studentPageState extends State<studentPage> {
       }
     }
     print('get student watch here outside if & for loop, school ID is -->${schoolId}');
-    QueryBuilder<ParseObject> queryTodo = QueryBuilder<ParseObject>(ParseObject('Student'));
+    QueryBuilder<ParseObject> queryStudent = QueryBuilder<ParseObject>(ParseObject('Student'));
     if (schoolId == null || schoolId.isEmpty){
       return [];
     }
-    queryTodo.whereContains('schoolName', schoolId);
-    final ParseResponse apiResponse = await queryTodo.query();
+    queryStudent.whereContains('schoolName', schoolId);
+    final ParseResponse apiResponse = await queryStudent.query();
 
     if (apiResponse.success && apiResponse.results != null) {
       return apiResponse.results as List<ParseObject>;

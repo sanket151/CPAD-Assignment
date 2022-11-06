@@ -153,13 +153,6 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   height: 16,
                 ),
-                // Container(
-                //   height: 50,
-                //   child: ElevatedButton(
-                //     child: const Text('Reset Password'),
-                //     onPressed: () => navigateToResetPassword(),
-                //   ),
-                // )
               ],
             ),
           ),
@@ -196,12 +189,7 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // void navigateToResetPassword() {
-  //   Navigator.push(
-  //     context,
-  //     MaterialPageRoute(builder: (context) => ResetPasswordPage()),
-  //   );
-  // }
+
 }
 
 class SignUpPage extends StatefulWidget {
@@ -336,7 +324,7 @@ class _SignUpPageState extends State<SignUpPage> {
     final user = ParseUser.createUser(username, password, email);
     var userresponse = await user.signUp();
 
-    final school = ParseObject('tempSchool')
+    final school = ParseObject('School')
       ..set('Name', schoolname)
       ..set('Address', schooladdress)
       ..set('User', (ParseObject('User')..objectId = user.objectId).toPointer());
@@ -394,7 +382,7 @@ class _UserPageState extends State<UserPage> {
 
     return Scaffold(
         appBar: AppBar(
-          title: Text('User logged in - Current User'),
+          title: Text('Home Page'),
         ),
         body: FutureBuilder<ParseUser?>(
             future: getUser(),
@@ -412,8 +400,8 @@ class _UserPageState extends State<UserPage> {
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      // crossAxisAlignment: CrossAxisAlignment.stretch,
+                      // mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Center(
                             child: Text('Hello, ${snapshot.data!.username}')),
@@ -479,6 +467,28 @@ class _UserPageState extends State<UserPage> {
                           ],
                         ),
                         SizedBox(height: 20,),
+                        Container(child: FutureBuilder(
+                          future: getStudentCount(),
+                          builder: (context, AsyncSnapshot<String> snapshot) {
+                            if(snapshot.hasData){
+                              final studentCount = snapshot.data as String;
+                              return Text('Total Students in this school are : $studentCount');
+                            }
+                            return const CircularProgressIndicator();
+                          },
+                        )),
+                        Container(child: FutureBuilder(
+                          future: getDriveCount (),
+                          builder: (context, AsyncSnapshot<String> snapshot){
+                            if(snapshot.hasData){
+                              final driveCount = snapshot.data as String;
+                              return Text('Total Drives from this school are : $driveCount');
+                            }
+                            return const CircularProgressIndicator();
+                          },
+                        )),
+                        Container(child: Text('Count of registered Students for vaccination: ')),
+                        Container(child: Text('Count of vaccinated Students')),
                         Container(
                           height: 50,
                           child: FloatingActionButton(
@@ -492,6 +502,40 @@ class _UserPageState extends State<UserPage> {
               }
             }));
   }
+
+  Future<String> getStudentCount() async{
+    final QueryBuilder<ParseObject> school  = QueryBuilder(ParseObject('School'));
+    school.whereContains('User', currentUser!.objectId!);
+    final ParseResponse schoolResponse = await school.query();
+    String schoolId = '';
+    if (schoolResponse.success && schoolResponse.results != null && schoolResponse.count ==1) {
+      for (var o in schoolResponse.results!) {
+        schoolId = (o as ParseObject).get<String>('objectId').toString();
+      }
+    }
+    if (schoolId == null || schoolId.isEmpty){
+      return '';
+    }
+    QueryBuilder<ParseObject> queryTodo =
+    QueryBuilder<ParseObject>(ParseObject('Student'))..whereContains('schoolName', schoolId);
+    final ParseResponse apiResponse = await queryTodo.count();
+    if (apiResponse.success && apiResponse.results != null) {
+      return apiResponse.count.toString();
+    } else {
+      return '';
+    }
+  }
+
+  Future<String> getDriveCount () async {
+    final QueryBuilder<ParseObject> driveCount = QueryBuilder(ParseObject('Drive'))..whereContains('User', currentUser!.objectId!);
+    final ParseResponse driveCountResponse = await driveCount.count();
+    if(driveCountResponse.success && driveCountResponse.result  != null){
+      return driveCountResponse.count.toString();
+    }else {
+      return '';
+    }
+  }
+
 }
 
 // class ResetPasswordPage extends StatefulWidget {

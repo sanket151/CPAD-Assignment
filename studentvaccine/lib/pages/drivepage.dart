@@ -245,10 +245,10 @@ class _drivePageState extends State<drivePage> {
   }
 
   Future<List<ParseObject>> getDrive() async {
-    QueryBuilder<ParseObject> queryTodo =
+    QueryBuilder<ParseObject> drive =
     QueryBuilder<ParseObject>(ParseObject('Drive'));
-    queryTodo.whereContains('User', currentUser!.objectId!);
-    final ParseResponse apiResponse = await queryTodo.query();
+    drive.whereContains('User', currentUser!.objectId!);
+    final ParseResponse apiResponse = await drive.query();
 
     if (apiResponse.success && apiResponse.results != null) {
       return apiResponse.results as List<ParseObject>;

@@ -14,7 +14,6 @@ class _schoolPageState extends State<schoolPage> {
   TextEditingController _addressController = TextEditingController();
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
     _nameController.dispose();
     _addressController.dispose();
