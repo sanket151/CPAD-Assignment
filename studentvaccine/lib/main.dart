@@ -488,8 +488,26 @@ class _UserPageState extends State<UserPage> {
                             return const CircularProgressIndicator();
                           },
                         )),
-                        Container(child: Text('Count of registered Students for vaccination: ')),
-                        Container(child: Text('Count of vaccinated Students')),
+                        Container(child: FutureBuilder(
+                          future: getRegisterCount (),
+                          builder: (context, AsyncSnapshot<String> snapshot){
+                            if(snapshot.hasData){
+                              final driveCount = snapshot.data as String;
+                              return Text('Count of registered Students : $driveCount');
+                            }
+                            return const CircularProgressIndicator();
+                          },
+                        )),
+                        Container(child: FutureBuilder(
+                          future: getVaccinatedCount (),
+                          builder: (context, AsyncSnapshot<String> snapshot){
+                            if(snapshot.hasData){
+                              final driveCount = snapshot.data as String;
+                              return Text('Count of registered Students : $driveCount');
+                            }
+                            return const CircularProgressIndicator();
+                          },
+                        )),
                         Container(
                           height: 50,
                           child: FloatingActionButton(
@@ -529,6 +547,26 @@ class _UserPageState extends State<UserPage> {
 
   Future<String> getDriveCount () async {
     final QueryBuilder<ParseObject> driveCount = QueryBuilder(ParseObject('Drive'))..whereContains('User', currentUser!.objectId!);
+    final ParseResponse driveCountResponse = await driveCount.count();
+    if(driveCountResponse.success && driveCountResponse.result  != null){
+      return driveCountResponse.count.toString();
+    }else {
+      return '';
+    }
+  }
+
+  Future<String> getRegisterCount() async {
+    final QueryBuilder<ParseObject> driveCount = QueryBuilder(ParseObject('Vaccine'))..whereContains('Status', 'Registered');
+    final ParseResponse driveCountResponse = await driveCount.count();
+    if(driveCountResponse.success && driveCountResponse.result  != null){
+      return driveCountResponse.count.toString();
+    }else {
+      return '';
+    }
+  }
+
+  Future<String> getVaccinatedCount() async {
+    final QueryBuilder<ParseObject> driveCount = QueryBuilder(ParseObject('Vaccine'))..whereContains('Status', 'Vaccinated');
     final ParseResponse driveCountResponse = await driveCount.count();
     if(driveCountResponse.success && driveCountResponse.result  != null){
       return driveCountResponse.count.toString();
