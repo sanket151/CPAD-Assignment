@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:parse_server_sdk_flutter/parse_server_sdk.dart';
+import 'package:pdf/pdf.dart';
+import 'package:csv/csv.dart';
 import 'package:syncfusion_flutter_xlsio/xlsio.dart' as excel hide Column;
 import 'package:file_saver/file_saver.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -221,6 +225,18 @@ class _reportDownloadState extends State<reportPage> {
               Container(
                 child: ElevatedButton.icon(
                     onPressed: () {
+                      generateCSV(dropdownValue, drivedate, status);
+                    },
+                    icon: Icon(
+                      Icons.add,
+                      color: Colors.black,
+                      size: 30.0,
+                    ),
+                    label: Text('Download csv')),
+              ),
+              Container(
+                child: ElevatedButton.icon(
+                    onPressed: () {
                       generatePdf(dropdownValue, drivedate, status);
                     },
                     icon: Icon(
@@ -229,7 +245,7 @@ class _reportDownloadState extends State<reportPage> {
                       size: 30.0,
                     ),
                     label: Text('Download pdf')),
-              ),
+              )
             ],
           )),
     );
@@ -343,7 +359,78 @@ class _reportDownloadState extends State<reportPage> {
     }
   }
 
+  Future<void> generateCSV(String dropdownValue, String drivedate, String status) async {
+
+    List<List<String>> vaccineData = [];
+      vaccineData.add(
+          ["Student Name", "Student Gender", "Student Date of Birth",
+            "Vacxine Name", "Vaccine Status", "Vaccine Drive Date"]);
+      final QueryBuilder<ParseObject> student = QueryBuilder(
+          ParseObject('Vaccine'));
+      if (dropdownValue.isNotEmpty) {
+        student.whereContains('VaccineName', dropdownValue);
+      }
+      if (drivedate.isNotEmpty) {
+        student.whereContains('DriveDate', drivedate);
+      }
+      if (status.isNotEmpty) {
+        student.whereContains('Status', status);
+      }
+      final ParseResponse apiResponse = await student.query();
+      if (apiResponse.success && apiResponse.results != null) {
+        var result = apiResponse.results as List<ParseObject>;
+        for (var row in result) {
+          var studentId = row
+              .get<ParseObject>('StudentId')
+              ?.objectId;
+
+          final QueryBuilder<ParseObject> students = QueryBuilder(
+              ParseObject('Student'));
+
+          students.whereContains('objectId', studentId!);
+
+          ParseResponse studentResponse = await students.query();
+          var student = studentResponse.results?.first as ParseObject;
+
+          String vname = row.get<String>('VaccineName')!;
+          String vstatus = row.get<String>('Status')!;
+          String vdrive = row.get<String>('DriveDate')!;
+          String? studentName = student.get<String>('Name');
+          String? studentGender = student.get<String>('Gender');
+          DateTime? studentDoB = student.get<DateTime>('DoB');
+
+          vaccineData.add([
+            studentName!,
+            studentGender!,
+            studentDoB.toString(),
+            vname,
+            vstatus,
+            vdrive
+          ]);
+        }
+
+        String csvData = ListToCsvConverter().convert(vaccineData);
+        final bytes = utf8.encode(csvData);
+        Uint8List data = Uint8List.fromList(bytes);
+
+        MimeType type = MimeType.CSV;
+        await FileSaver.instance.saveFile(
+          'VaccineStatuscsv', data, 'csv', mimeType: type);
+      }
+  }
+
   Future<void> generatePdf(String dropdownValue, String drivedate, String status) async {
+
+    //final PdfDocument pdf = PdfDocument();
+    //final PdfPage page = document.
+
+    var pdf = pw.Document();
+    var page = pw.Page(
+      build: (pw.Context context) => pw.Header(
+        child: pw.Text('Vaccination Status'),
+      ),
+    );
+
     final QueryBuilder<ParseObject> student = QueryBuilder(
         ParseObject('Vaccine'));
     if (dropdownValue.isNotEmpty) {
@@ -378,9 +465,16 @@ class _reportDownloadState extends State<reportPage> {
         String? studentGender = student.get<String>('Gender');
         DateTime? studentDoB = student.get<DateTime>('DoB');
 
-      }
-      final pdf = pw.Document();
+        page.paint(
+        pw.Row(
+          children: [
+            pw.Text(studentName! + ", " + studentGender! + ", " +
+                studentDoB.toString() + ", " + vname + ", " + vstatus + ", " + vdrive)
+            ],
+        ), pw.Context(document: pdf.document));
 
+      }
+      pdf.addPage(page);
       //Save and launch the file.
       Uint8List data = await pdf.save();
       MimeType type = MimeType.PDF;

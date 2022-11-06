@@ -212,7 +212,7 @@ class _studentPageState extends State<studentPage> {
 
   void addStudent() async {
     print('add button pressed');
-    if (_nameController.text.trim().isEmpty && gender.isEmpty && dob == null) {
+    if (_nameController.text.trim().isEmpty || gender.isEmpty || dob == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Mandatory field is Empty"),
         duration: Duration(seconds: 2),
